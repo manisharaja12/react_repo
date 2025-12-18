@@ -1,95 +1,68 @@
 const express = require("express");
-const mdb = require("mongoose");
-const Signup = require("./models/SignupSchema");
-const bcrypt = require("bcrypt");
-const cors = require("cors")
+const mongoose = require("mongoose");
+const cors = require("cors");
+
 const app = express();
 const PORT = 8001;
 
+/* ===== Middleware ===== */
+app.use(cors());
 app.use(express.json());
-app.use(cors())
 
-mdb
-  .connect("mongodb+srv://cys:cys@cypersec.h6wsgqg.mongodb.net/seceDec2025")
-  .then(() => console.log("MongoDB Connection Successful"))
-  .catch((err) => console.log("MongoDB Connection Unsuccessful", err));
+/* ===== MongoDB Connection ===== */
+mongoose
+  .connect("mongodb+srv://cys:cys@cluster0.kalhhsd.mongodb.net/")
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.log(err));
 
+/* ===== Schema ===== */
+const userSchema = new mongoose.Schema({
+  email: String,
+  password: String,
+});
+
+const User = mongoose.model("User", userSchema);
+
+/* ===== Home ===== */
 app.get("/", (req, res) => {
-  res.send("Server started successfully");
+  res.send("Backend running");
 });
 
+/* ===== Signup API ===== */
 app.post("/signup", async (req, res) => {
-  const { email, username, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const newSignup = new Signup({
-    email: email,
-    username: username,
-    password: hashedPassword,
-  });
-  newSignup.save();
-  res.status(200).json({ "message": "Signup Successful", "isSignup": true });
+  const { email, password } = req.body;
+
+  const userExists = await User.findOne({ email });
+  if (userExists) {
+    return res.json({ message: "User already exists" });
+  }
+
+  const newUser = new User({ email, password });
+  await newUser.save();
+
+  res.json({ message: "Signup successful" });
 });
 
+/* ===== Login API (THIS WAS MISSING) ===== */
 app.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const existingUser = await Signup.findOne({ email: email });
-    console.log(existingUser);
+  const { email, password } = req.body;
 
-    if (existingUser) {
-      const isValidPassword = await bcrypt.compare(
-        password,
-        existingUser.password
-      );
-      console.log(isValidPassword);
+  const user = await User.findOne({ email, password });
 
-      if (isValidPassword) {
-        res.status(200).json({
-          message: "Login Successful",
-          isLoggedIn: true,
-        });
-      } else {
-        res.status(401).json({
-          message: "Incorrect Password",
-          isLoggedIn: false,
-        });
-      }
-    } else {
-      res.status(404).json({
-        message: "User not Found Signup First",
-        isLoggedIn: false,
-      });
-    }
-  } catch (error) {
-    console.log("Login Error");
-    res.status(500).json({
-      message: "Login Error",
+  if (!user) {
+    return res.json({
+      message: "Invalid email or password",
       isLoggedIn: false,
     });
   }
-});
 
-app.get('/getallsignup',async(req,res)=>{
-  const signup = await Signup.find();
-  console.log(signup);
-  res.send("Data Fetched")
-
-})
-
-app.get("/json", (req, res) => {
   res.json({
-    College: "Sece",
-    Dept: "CYS",
-    StuCount: "64",
+    message: "Login successful",
+    isLoggedIn: true,
   });
 });
 
-app.get("/static", (req, res) => {
-  res.sendFile(
-    "/Users/prasanthksp/Documents/RAMPeX-Parent-Folder/Trainings/SECE/SECE_MERN_DEC_2025/seceBackend2025Dec/index.html"
-  );
-});
-
+/* ===== Start Server ===== */
 app.listen(PORT, () => {
-  console.log(`Server Started Successfully in the port ${PORT}`);
+  console.log('Server running on port ${PORT}');
 });
