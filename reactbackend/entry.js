@@ -11,7 +11,7 @@ app.use(express.json());
 
 /* ===== MongoDB Connection ===== */
 mongoose
-  .connect("mongodb+srv://cys:cys@cluster0.kalhhsd.mongodb.net/")
+  .connect("mongodb+srv://cys:cys@cluster0.kalhhsd.mongodb.net/CYS")
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.log(err));
 
