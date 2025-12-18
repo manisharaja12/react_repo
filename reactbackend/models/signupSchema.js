@@ -6,5 +6,5 @@ const signupSchema = mdb.Schema({
     password: String
 })
 
-const signup_schema = mdb.model("signup", signupSchema)
+const signup_schema = mdb.model("signup",signupSchema)
 module.exports = signup_schema;

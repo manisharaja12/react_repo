@@ -1,91 +1,95 @@
-// entry.js
-
 const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-
+const mdb = require("mongoose");
+const Signup = require("./models/SignupSchema");
+const bcrypt = require("bcrypt");
+const cors = require("cors")
 const app = express();
-const PORT = process.env.PORT || 8001; // Render provides the PORT
+const PORT = 8001;
 
-/* ===== Middleware ===== */
-app.use(cors());
 app.use(express.json());
+app.use(cors())
 
-/* ===== MongoDB Connection (Direct URL) ===== */
-mongoose
-  .connect("mongodb+srv://cys:cys@cluster0.kalhhsd.mongodb.net/Mern", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.log("MongoDB connection error:", err));
+mdb
+  .connect("mongodb+srv://cys:cys@cypersec.h6wsgqg.mongodb.net/seceDec2025")
+  .then(() => console.log("MongoDB Connection Successful"))
+  .catch((err) => console.log("MongoDB Connection Unsuccessful", err));
 
-/* ===== Schema ===== */
-const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-});
-
-const User = mongoose.model("User", userSchema);
-
-/* ===== Home Route ===== */
 app.get("/", (req, res) => {
-  res.send("Backend running");
+  res.send("Server started successfully");
 });
 
-/* ===== Signup API ===== */
 app.post("/signup", async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and password required" });
-  }
-
-  try {
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    const newUser = new User({ email, password });
-    await newUser.save();
-
-    res.status(201).json({ message: "Signup successful" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
+  const { email, username, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newSignup = new Signup({
+    email: email,
+    username: username,
+    password: hashedPassword,
+  });
+  newSignup.save();
+  res.status(200).json({ "message": "Signup Successful", "isSignup": true });
 });
 
-/* ===== Login API ===== */
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and password required" });
-  }
-
   try {
-    const user = await User.findOne({ email, password });
+    const { email, password } = req.body;
+    const existingUser = await Signup.findOne({ email: email });
+    console.log(existingUser);
 
-    if (!user) {
-      return res.status(401).json({
-        message: "Invalid email or password",
+    if (existingUser) {
+      const isValidPassword = await bcrypt.compare(
+        password,
+        existingUser.password
+      );
+      console.log(isValidPassword);
+
+      if (isValidPassword) {
+        res.status(200).json({
+          message: "Login Successful",
+          isLoggedIn: true,
+        });
+      } else {
+        res.status(401).json({
+          message: "Incorrect Password",
+          isLoggedIn: false,
+        });
+      }
+    } else {
+      res.status(404).json({
+        message: "User not Found Signup First",
         isLoggedIn: false,
       });
     }
-
-    res.json({
-      message: "Login successful",
-      isLoggedIn: true,
+  } catch (error) {
+    console.log("Login Error");
+    res.status(500).json({
+      message: "Login Error",
+      isLoggedIn: false,
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
   }
 });
 
-/* ===== Start Server ===== */
+app.get('/getallsignup',async(req,res)=>{
+  const signup = await Signup.find();
+  console.log(signup);
+  res.send("Data Fetched")
+
+})
+
+app.get("/json", (req, res) => {
+  res.json({
+    College: "Sece",
+    Dept: "CYS",
+    StuCount: "64",
+  });
+});
+
+app.get("/static", (req, res) => {
+  res.sendFile(
+    "/Users/prasanthksp/Documents/RAMPeX-Parent-Folder/Trainings/SECE/SECE_MERN_DEC_2025/seceBackend2025Dec/index.html"
+  );
+});
+
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server Started Successfully in the port ${PORT}`);
 });
