@@ -152,7 +152,7 @@ function Signup() {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:8001/signup", {
+      const res = await fetch("https://react-repo-1-ky3w.onrender.com", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, username, password }),
@@ -243,7 +243,7 @@ const containerStyle = {
 const formStyle = {
   width: "320px",
   display: "flex",
-  flexDirection: "column", // 🔥 vertical layout fix
+  flexDirection: "column", 
   gap: "12px",
   padding: "20px",
   border: "2px solid black",
